@@ -1,5 +1,6 @@
 {
   "name": "capacitor",
+  "version": "7.2.0-loghistory",
   "private": true,
   "workspaces": [
     "android",
