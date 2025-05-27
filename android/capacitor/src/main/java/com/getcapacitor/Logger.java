@@ -3,10 +3,16 @@ package com.getcapacitor;
 import android.text.TextUtils;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Logger {
 
     public static final String LOG_TAG_CORE = "Capacitor";
     public static CapConfig config;
+
+    private static final List<String> history = new ArrayList<>();
+    private static final int historyLimit = 3000;
 
     private static Logger instance;
 
@@ -38,11 +44,9 @@ public class Logger {
     }
 
     public static void verbose(String tag, String message) {
-        if (!shouldLog()) {
-            return;
-        }
-
+        if (!shouldLog()) return;
         Log.v(tag, message);
+        addToHistory("[V][" + tag + "] " + message);
     }
 
     public static void debug(String message) {
@@ -50,11 +54,9 @@ public class Logger {
     }
 
     public static void debug(String tag, String message) {
-        if (!shouldLog()) {
-            return;
-        }
-
+        if (!shouldLog()) return;
         Log.d(tag, message);
+        addToHistory("[D][" + tag + "] " + message);
     }
 
     public static void info(String message) {
@@ -62,11 +64,9 @@ public class Logger {
     }
 
     public static void info(String tag, String message) {
-        if (!shouldLog()) {
-            return;
-        }
-
+        if (!shouldLog()) return;
         Log.i(tag, message);
+        addToHistory("[I][" + tag + "] " + message);
     }
 
     public static void warn(String message) {
@@ -74,11 +74,9 @@ public class Logger {
     }
 
     public static void warn(String tag, String message) {
-        if (!shouldLog()) {
-            return;
-        }
-
+        if (!shouldLog()) return;
         Log.w(tag, message);
+        addToHistory("[W][" + tag + "] " + message);
     }
 
     public static void error(String message) {
@@ -90,14 +88,41 @@ public class Logger {
     }
 
     public static void error(String tag, String message, Throwable e) {
-        if (!shouldLog()) {
-            return;
-        }
-
+        if (!shouldLog()) return;
         Log.e(tag, message, e);
+        addToHistory("[E][" + tag + "] " + message);
     }
 
     public static boolean shouldLog() {
         return config == null || config.isLoggingEnabled();
     }
+
+    // 🆕 以下：履歴管理用メソッド
+
+    private static void addToHistory(String message) {
+        synchronized (history) {
+            String line = message.length() > 4068 ? message.substring(0, 4068) : message;
+            history.add(line);
+            if (history.size() > historyLimit) {
+                history.subList(0, history.size() - historyLimit).clear();
+            }
+        }
+    }
+
+    public static List<String> getHistory(int max) {
+        synchronized (history) {
+            if (max > 0 && max < history.size()) {
+                return new ArrayList<>(history.subList(history.size() - max, history.size()));
+            } else {
+                return new ArrayList<>(history);
+            }
+        }
+    }
+
+    public static void clearHistory() {
+        synchronized (history) {
+            history.clear();
+        }
+    }
 }
+
